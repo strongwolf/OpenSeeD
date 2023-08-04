@@ -12,7 +12,7 @@ try:
     warnings.filterwarnings('ignore', category=ShapelyDeprecationWarning)
 except:
     pass
-
+warnings.filterwarnings('ignore')
 import sys
 import copy
 import itertools
@@ -35,6 +35,7 @@ from detectron2.projects.deeplab import add_deeplab_config, build_lr_scheduler
 from detectron2.solver.build import maybe_add_gradient_clipping
 from detectron2.utils.logger import setup_logger
 from detectron2.config import LazyConfig, instantiate
+from detectron2.evaluation import print_csv_format
 
 from utils.arguments import load_opt_command
 from utils.distributed import init_distributed, is_main_process, apply_distributed, synchronize
@@ -321,7 +322,7 @@ class Trainer(DefaultTrainer):
         model_without_ddp = model
         if not type(model) == BaseModel:
             model_without_ddp = model.module
-
+        results = OrderedDict()
         for dataloader, dataset_name in zip(dataloaders, dataset_names):
             # build evaluator
             evaluator = build_evaluator(cfg, dataset_name, cfg['OUTPUT_DIR'])
@@ -395,9 +396,24 @@ class Trainer(DefaultTrainer):
                     start_data_time = time.perf_counter()
 
             # evaluate
-            results = evaluator.evaluate()
+            results_i = evaluator.evaluate()
+            if results_i is None:
+                results_i = {}
+            results[dataset_name] = results_i
+            if comm.is_main_process():
+                assert isinstance(
+                    results_i, dict
+                ), "Evaluator must return a dict on the main process. Got {} instead.".format(
+                    results_i
+                )
+                logger.info("Evaluation results for {} in csv format:".format(dataset_name))
+                print_csv_format(results_i)
+
+        if len(results) == 1:
+            results = list(results.values())[0]
 
         model = model.train().cuda()
+        return results
 
 
 def setup(args):
@@ -437,7 +453,10 @@ def main(args=None):
         trainer.cfg.MODEL.WEIGHTS = args.lang_weight
         print("load original language language weight!!!!!!")
         # trainer.resume_or_load(resume=args.resume)
-        trainer._trainer.model.module = trainer._trainer.model.module.from_pretrained(cfg.MODEL.WEIGHTS)
+        if hasattr(trainer._trainer.model, 'module'):
+            trainer._trainer.model.module = trainer._trainer.model.module.from_pretrained(cfg.MODEL.WEIGHTS)
+        else:
+            trainer._trainer.model = trainer._trainer.model.from_pretrained(cfg.MODEL.WEIGHTS)
         trainer.cfg.MODEL.WEIGHTS = weight
     print("load pretrained model weight!!!!!!")
     trainer.resume_or_load(resume=args.resume)

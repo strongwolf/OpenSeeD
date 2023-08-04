@@ -14,7 +14,7 @@
 WEIGHT: ''
 PORT: 53711
 VERBOSE: true
-OUTPUT_DIR: 'output/swint_coco_decouple'
+OUTPUT_DIR: 'output/swint_coco_decouple_1x'
 # misc
 LOADER:
   JOINT: True
@@ -42,7 +42,7 @@ MODEL:
   BACKBONE:
     NAME: swin
     #PRETRAINED: 'https://github.com/SwinTransformer/storage/releases/download/v1.0.0/swin_tiny_patch4_window7_224.pth'
-    PRETRAINED: 'swin_tiny_patch4_window7_224.pth'
+    PRETRAINED: 'weights/swin_tiny_patch4_window7_224.pth'
     LOAD_PRETRAINED: True
     SWIN:
       PRETRAIN_IMG_SIZE: 224
@@ -274,6 +274,7 @@ SOLVER:
     NORM_TYPE: 2.0
   AMP:
     ENABLED: True
+  RESCALE_INTERVAL: False
 
 OBJECT365:
   INPUT:
