@@ -227,7 +227,8 @@ INPUT:
 DATASETS:
   TRAIN: ["coco_2017_train_panoptic",]
   # open vocabulary segmentation evaluation.
-  TEST: ["coco_2017_val_panoptic_with_sem_seg", "ade20k_panoptic_val"]
+  TEST: ["sunrgbd_37_val_seg"]
+  #TEST: ["coco_2017_val_panoptic_with_sem_seg", "ade20k_panoptic_val"]
   CLASS_CONCAT: false
   SIZE_DIVISIBILITY: 32
   PROPOSAL_FILES_TRAIN: []
